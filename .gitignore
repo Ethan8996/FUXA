@@ -65,6 +65,8 @@ typings/
 # workspace
 *.code-workspace
 
+**/.idea/
+
 #appdata
 _appdata/
 
@@ -89,3 +91,5 @@ server/_appdata
 #client/package-lock.json
 
 server/_widgets
+
+/project/
