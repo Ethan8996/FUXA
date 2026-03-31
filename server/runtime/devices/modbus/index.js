@@ -213,34 +213,50 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
         var count = 0;
         for (var id in data.tags) {
             try {
-                var offset = parseInt(data.tags[id].address) - 1;   // because settings address from 1 to 65536 but communication start from 0
+                const tag = data.tags[id];
+                const tagType = normalizeTagType(tag.type);
+                if (!tagType) {
+                    logger.error(`'${data.name}' load error! unsupported tag type '${tag.type}' for tag '${tag.name || id}'`);
+                    continue;
+                }
+                if (tag.type !== tagType) {
+                    logger.warn(`'${data.name}' load warning! generic tag type '${tag.type}' for tag '${tag.name || id}' normalized to '${tagType}'`);
+                }
+                const rawAddress = parseInt(tag.address);
+                if (Number.isNaN(rawAddress) || rawAddress < 1 || rawAddress > 65536) {
+                    logger.error(`'${data.name}' load error! invalid tag address '${tag.address}' for tag '${tag.name || id}'`);
+                    continue;
+                }
+                tag.type = tagType;
+                var offset = rawAddress - 1;   // because settings address from 1 to 65536 but communication start from 0
                 var token = Math.trunc(offset / TOKEN_LIMIT);
-                var memaddr = formatAddress(data.tags[id].memaddress, token);
+                var memaddr = formatAddress(tag.memaddress, token);
                 if (!memory[memaddr]) {
                     memory[memaddr] = new MemoryItems();
                 }
                 if (!memory[memaddr].Items[offset]) {
-                    memory[memaddr].Items[offset] = new MemoryItem(data.tags[id].type, offset);
+                    memory[memaddr].Items[offset] = new MemoryItem(tagType, offset);
                 }
-                memory[memaddr].Items[offset].Tags.push(data.tags[id]); // because you can have multiple tags at the same DB address
+                memory[memaddr].Items[offset].Tags.push(tag); // because you can have multiple tags at the same DB address
 
                 if (offset < memory[memaddr].Start) {
                     if (memory[memaddr].Start != 65536) {
                         memory[memaddr].MaxSize += memory[memaddr].Start - offset;
                         memory[memaddr].Start = offset;
                     } else {
-                        memory[memaddr].MaxSize = datatypes[data.tags[id].type].WordLen;
+                        memory[memaddr].MaxSize = datatypes[tagType].WordLen;
                         memory[memaddr].Start = offset;
                     }
                 } else {
-                    var len = offset + datatypes[data.tags[id].type].WordLen - memory[memaddr].Start;
+                    var len = offset + datatypes[tagType].WordLen - memory[memaddr].Start;
                     if (memory[memaddr].MaxSize < len) {
                         memory[memaddr].MaxSize = len;
                     }
                 }
                 memItemsMap[id] = memory[memaddr].Items[offset];
-                memItemsMap[id].format = data.tags[id].format;
-                stepsMap[parseInt(data.tags[id].memaddress) + offset] = { size: datatypes[data.tags[id].type].WordLen, offset: offset };
+                memItemsMap[id].format = tag.format;
+                stepsMap[parseInt(tag.memaddress) + offset] = { size: datatypes[tagType].WordLen, offset: offset };
+                count++;
             } catch (err) {
                 logger.error(`'${data.name}' load error! ${err}`);
             }
@@ -838,6 +854,17 @@ function MODBUSclient(_data, _logger, _events, _runtime) {
     const delay = ms => { return new Promise(resolve => setTimeout(resolve, ms)) };
 }
 
+function normalizeTagType(type) {
+    if (datatypes[type]) {
+        return type;
+    }
+    const aliases = {
+        bool: 'Bool',
+        number: 'UInt16'
+    };
+    return aliases[type] && datatypes[aliases[type]] ? aliases[type] : null;
+}
+
 const ModbusTypes = { RTU: 0, TCP: 1 };
 const ModbusMemoryAddress = { CoilStatus: 0, DigitalInputs: 100000, InputRegisters: 300000, HoldingRegisters: 400000 };
 const ModbusOptionType = {
@@ -864,7 +891,8 @@ module.exports = {
         if (!ModbusRTU) return null;
         return new MODBUSclient(data, logger, events, runtime);
     },
-    ModbusTypes: ModbusTypes
+    ModbusTypes: ModbusTypes,
+    normalizeTagType: normalizeTagType
 }
 
 function MemoryItem(type, offset) {
