@@ -107,6 +107,92 @@ tokenExpiresIn: '1h'
 
 默认管理员常见为 `admin / 123456`，生产环境请立即修改。
 
+### 4.3 日志系统（输出、存储与查询）
+
+FUXA 的日志主要分成 3 类：
+
+- 应用运行日志：`fuxa.log`
+- 错误日志：`fuxa-err.log`
+- HTTP 访问日志：`api.log`
+
+#### 默认输出位置
+
+- 默认日志目录由 `server/settings.default.js` 中的 `logDir` 决定，默认值是 `_logs`
+- 启动时 `server/main.js` 会把它解析到实际工作目录，并在目录不存在时自动创建
+- Docker 场景建议挂载 `_logs`，这样重启容器后日志不会丢失
+
+#### 应用日志如何输出
+
+- FUXA 服务端日志由 `server/runtime/logger.js` 统一封装，底层使用 `winston`
+- 代码里常见调用方式是 `logger.info(...)`、`logger.warn(...)`、`logger.error(...)`、`logger.debug(...)`
+- 控制台输出会带彩色前缀，如 `[INF]`、`[WAR]`、`[ERR]`、`[DBG]`、`[TRA]`
+- 文件输出格式统一为：`时间戳 [level] 消息内容`，其中 `level` 为小写（如 `info`、`error`）
+
+典型示例：
+
+```text
+2026-03-31T03:40:32.518Z [error] 'Cdu' _readMemory error! RangeError ...
+```
+
+#### 文件落盘与轮转规则
+
+- `fuxa.log`：记录 `info` 及以上级别日志
+- `fuxa-err.log`：记录 `error` 级别日志
+- `debug` / `trace` 默认主要用于控制台输出，不会按当前 File transport 配置写入日志文件
+- 当前代码里每个文件最大约 `1MB`
+- 当前代码里每类日志最多保留 `5` 个轮转文件
+
+也就是说，FUXA 现在的文件日志轮转主要由 `winston File transport` 的 `maxsize` / `maxFiles` 控制。
+
+#### HTTP 访问日志如何输出
+
+- `server/main.js` 中通过 `morgan` 生成 HTTP 访问日志
+- 失败请求（HTTP `>= 400`）会追加写入 `api.log`
+- 同时终端里还会把成功请求输出到 `stdout`，失败请求输出到 `stderr`
+
+`api.log` 示例：
+
+```text
+127.0.0.1 - - [31/Mar/2026:03:05:11 +0000] "GET /assets/lib/svg/svg.min.js.map HTTP/1.1" 404 168 "-" "Mozilla/..."
+```
+
+#### 如何查询 / 查看日志
+
+FUXA 内置了诊断接口和前端日志查看页：
+
+- `GET /api/logsdir`：列出日志目录中的文件
+- `GET /api/logs?file=<文件名>`：下载指定日志文件内容
+
+前端对应实现：
+
+- `client/src/app/_services/diagnose.service.ts`
+- `client/src/app/logs-view/logs-view.component.ts`
+
+这意味着你可以：
+
+- 在前端日志页面选择 `fuxa.log`、`fuxa-err.log`、`api.log`
+- 也可以直接到服务器 `_logs/` 目录里查看原始文件
+
+#### 权限与安全限制
+
+- 日志接口走 `server/api/diagnose/index.js`
+- `logsdir` / `logs` 接口要求管理员权限
+- 下载日志文件时会经过 `server/api/path-helper.js` 的路径规范化与目录边界检查，防止通过 `../` 读取日志目录外的文件
+
+#### 配置项说明（当前实现的真实行为）
+
+- `logDir`：控制日志目录位置
+- `logApiLevel`：当前实现中主要用于控制是否启用 HTTP 访问日志；当值为 `none` 时禁用 `morgan` 日志
+- `logFull`：会影响部分 `logger.info(..., ..., onlyFull)` 这类“仅完整日志模式写入”的记录是否落盘
+- `logs.retention`：配置项存在于默认设置中，但当前代码里没有看到它直接参与 `winston` 文件日志清理；实际轮转仍以 `maxsize` / `maxFiles` 为准
+
+#### 实际排查建议
+
+- 看设备通信或脚本异常：优先查 `fuxa-err.log`
+- 看系统启动、模块初始化、普通运行状态：查 `fuxa.log`
+- 看接口 404/401/500、静态资源访问失败：查 `api.log`
+- 若是 Docker 部署，先确认 `_logs` 是否已做卷挂载，否则重建容器后历史日志会消失
+
 ---
 
 ## 5. 编辑器常见操作（HowTo 中文速览）
