@@ -56,9 +56,14 @@ const Datatypes = {
      * Bool
      */
     Bool: {
-        bytes: 1,
+        bytes: 2,
         // parser: (v, bit = 0) => v >> bit & 1 === 1,
-        parser: (buffer, offset = 0, bit = 0) => +buffer.readUInt8(offset) >> bit & 1 === 1,
+        parser: (buffer, offset = 0, bit = 0) => {
+            // Read full 16-bit register for Holding Register (400000 range)
+            const value = buffer.readUInt16BE ? buffer.readUInt16BE(offset) : 
+                         (buffer.readUInt8 ? (buffer.readUInt8(offset) << 8 | buffer.readUInt8(offset + 1)) : 0);
+            return (value >> bit & 1) === 1;
+        },
         formatter: v => (v === '1' || v === 1 || v === true) ? 1 : 0,
         WordLen: 1
     },
