@@ -71,6 +71,218 @@ npm start
 
 适合做桌面 HMI 全屏运行。Electron 本质是桌面壳，访问的是 FUXA Web 服务。
 
+#### 2.5.1 直接下载官方预构建包
+
+官方仓库已经提供 GitHub Actions 构建产物，适合不想自己配环境时直接下载：
+
+- 桌面版 Electron：`https://github.com/frangoteam/FUXA/actions/workflows/electron_latest.yml`
+- Headless 单文件版：`https://github.com/frangoteam/FUXA/actions/workflows/headless_packaging.yml`
+- 官方 Release 页面：`https://github.com/frangoteam/FUXA/releases`
+
+下载方式：
+
+1. 登录 GitHub
+2. 打开对应 workflow 页面
+3. 进入最近一次成功构建
+4. 在页面底部 `Artifacts` 下载对应平台产物
+
+Windows 常见产物名：
+
+- Electron 桌面版：`FUXA-windows-x64.exe`
+- Headless 单文件版：`FUXA-headless-windows-x64.exe`
+
+说明：
+
+- Electron 版适合本机直接全屏运行 HMI，带桌面窗口
+- Headless 版适合作为服务程序运行，启动后通过浏览器访问 `http://localhost:1881`
+
+#### 2.5.2 从源码本地打包 Electron Windows exe
+
+当前仓库已经包含 Electron 打包配置：
+
+- Workflow：`.github/workflows/electron_latest.yml`
+- Electron 配置：`app/electron/package.json`
+
+官方 workflow 的实际步骤如下：
+
+1. 安装 `server` 依赖
+2. 安装 `client` 依赖
+3. 构建 `client/dist`
+4. 安装 `app/electron` 依赖
+5. 将 `server/` 和 `client/dist/` 复制到 `app/electron/`
+6. 执行 `electron-builder install-app-deps`
+7. 打包 Windows NSIS 安装包
+
+对应命令顺序可整理为：
+
+```bash
+cd server
+npm install
+
+cd ../client
+npm install
+npm run build -- --configuration=production
+
+cd ../app/electron
+npm install
+npx electron-builder install-app-deps
+npx electron-builder --win nsis --x64
+```
+
+补充说明：
+
+- `app/electron/package.json` 已配置 `win.target = nsis`
+- 默认输出目录是 `app/electron/dist/`
+- Windows 产物通常是 `.exe` 安装包
+- 官方 workflow 当前使用 Node.js 18
+
+如果你希望完全按官方 workflow 复制，还需要在打包前把构建结果复制进 `app/electron`：
+
+```bash
+mkdir -p app/electron/server
+mkdir -p app/electron/client/dist
+cp -r server/. app/electron/server/
+cp -r client/dist/. app/electron/client/dist/
+```
+
+#### 2.5.3 从源码本地打包 Headless 单文件 exe
+
+当前仓库也包含 headless 打包 workflow：
+
+- Workflow：`.github/workflows/headless_packaging.yml`
+- 入口文件：`app/headless/headless-entry.js`
+
+Headless 版的核心特点：
+
+- 不依赖 Electron 桌面窗口
+- 将服务端和前端静态资源打成一个独立可执行文件
+- Windows 下产物是单个 `.exe`
+
+官方 workflow 的核心步骤：
+
+1. 安装 `server` 与 `client` 依赖
+2. 构建 `client/dist`
+3. 组装 `fuxa-headless/server` 和 `fuxa-headless/client/dist`
+4. 复制 `app/headless/headless-entry.js` 为 `fuxa-headless/main.js`
+5. 安装 `@yao-pkg/pkg`
+6. 执行 `pkg --targets node20-win-x64`
+
+可参考命令：
+
+```bash
+cd server
+npm install
+
+cd ../client
+npm install
+npm run build -- --configuration=production
+
+cd ..
+mkdir -p fuxa-headless/server
+mkdir -p fuxa-headless/client/dist
+cp -r server/. fuxa-headless/server/
+cp -r client/dist/. fuxa-headless/client/dist/
+cp app/headless/headless-entry.js fuxa-headless/main.js
+```
+
+然后在 `fuxa-headless/package.json` 中声明 `pkg` 配置，再执行：
+
+```bash
+npm install -g @yao-pkg/pkg
+pkg fuxa-headless/package.json --targets node20-win-x64 --out-path artifacts
+```
+
+补充说明：
+
+- 官方 workflow 当前使用 Node.js 20
+- Windows 产物会被整理为 `FUXA-headless-windows-x64.exe`
+- 更适合“部署到工控机后用浏览器访问”的场景，不适合替代桌面全屏壳
+
+#### 2.5.4 交付给客户时应附带哪些文件
+
+这部分非常重要。当前 FUXA 的 `Electron exe` 和 `Headless exe` 都不是“把整个项目永久封装在 exe 内部再直接运行”的模式，运行时仍然依赖外部可写的数据目录。
+
+##### A. 交付 Electron 桌面版 exe
+
+Electron 版启动后会自动拉起本地 FUXA 服务，并在 Electron 窗口中打开 `http://localhost:1881`。对客户来说，通常**不需要再手工打开浏览器**。
+
+但项目文件建议不要只交付一个导出的 `json`，更推荐交付一个完整项目目录，例如：
+
+```text
+CustomerProject/
+└── data/
+    ├── _appdata/
+    ├── _db/
+    ├── _images/
+    ├── _widgets/
+    ├── _reports/
+    └── _logs/
+```
+
+建议交付内容：
+
+- `FUXA-windows-x64.exe`
+- 一个完整项目目录，例如 `CustomerProject/`
+- 目录中的 `data/_appdata/`：必需，保存项目配置、设置、用户等
+- 目录中的 `data/_db/`：如果需要保留历史数据、报警历史，建议一起交付
+- 目录中的 `data/_images/`：如果项目引用了自定义图片，必须一起交付
+- 目录中的 `data/_widgets/`：如果项目使用了自定义 widgets，必须一起交付
+- 目录中的 `data/_reports/`：如果项目依赖预生成报表或报表模板，建议一起交付
+- `data/_logs/`：不是启动必需，但如果要保留既有运行日志，可一起交付
+
+交付建议：
+
+- **最佳实践**：交付 `exe + 完整项目目录`
+- **不建议**：只交付 `json` 备份文件。因为 `json` 更适合导入/备份，不包含完整运行期目录状态
+- 如果客户希望双击后直接进入固定项目，可进一步定制 Electron 启动参数或自动启动配置
+
+##### B. 交付 Headless 单文件 exe
+
+Headless 版没有桌面窗口。客户启动 `FUXA-headless-windows-x64.exe` 后，需要通过浏览器访问：
+
+```text
+http://localhost:1881
+```
+
+当前 headless 启动入口会默认把数据目录放到用户主目录下：
+
+- Linux/macOS：`~/fuxa-headless-data`
+- Windows 可理解为：`%USERPROFILE%\\fuxa-headless-data`
+
+因此，Headless 版交付时有两种常见方式：
+
+1. 交付 `exe`，客户首次启动后再手工导入项目 `json`
+2. 交付 `exe + 预制的 fuxa-headless-data 目录`，让客户复制到自己的用户主目录下
+
+如果希望客户拿到后直接可用，推荐第二种。建议目录内容至少包括：
+
+```text
+fuxa-headless-data/
+├── _appdata/
+├── _db/
+├── _images/
+├── _widgets/
+├── _reports/
+└── _logs/
+```
+
+说明：
+
+- `Headless exe` 本身已经包含程序代码，不需要再附带 `server/`、`client/` 源码目录
+- 但如果要附带一个“现成工程”，仍然建议交付完整数据目录，而不是只给 `json`
+- 如果仅提供 `json`，客户还需要自己进入 FUXA 页面执行导入
+
+##### C. 什么时候只给 json 就够了
+
+只有在以下场景下，单独给 `json` 才比较合适：
+
+- 客户现场已经有一套正在运行的 FUXA
+- 你的目标只是导入一个新项目模板
+- 不需要保留历史数据、报警历史、运行日志
+- 不依赖外部图片、widgets、报表等附加资源
+
+如果是完整交付、现场上线、或希望客户“开箱即用”，优先交付完整数据目录。
+
 ---
 
 ## 3. 快速上手路径（官方入门流程中文化）
