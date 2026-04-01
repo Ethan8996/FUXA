@@ -987,6 +987,80 @@ mat-toolbar-row {
 
 .light-dialog-container .md-drppicker {
     box-shadow: none !important;
+    color: #111 !important;
+    background: #fff !important;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.light-dialog-container .md-drppicker,
+.light-dialog-container .md-drppicker table,
+.light-dialog-container .md-drppicker th,
+.light-dialog-container .md-drppicker td,
+.light-dialog-container .md-drppicker .month,
+.light-dialog-container .md-drppicker .week,
+.light-dialog-container .md-drppicker .calendar-table,
+.light-dialog-container .md-drppicker .buttons_input,
+.light-dialog-container .md-drppicker .ranges,
+.light-dialog-container .md-drppicker .ranges ul,
+.light-dialog-container .md-drppicker .ranges li button {
+    color: #111 !important;
+}
+
+.light-dialog-container .md-drppicker .calendar-table,
+.light-dialog-container .md-drppicker .ranges li button,
+.light-dialog-container .md-drppicker select {
+    background: #fff !important;
+}
+
+.light-dialog-container .md-drppicker .ranges li button {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-dialog-container .md-drppicker .ranges li button.active,
+.light-dialog-container .md-drppicker td.active,
+.light-dialog-container .md-drppicker td.active:hover {
+    color: #fff !important;
+    background: #3059AF !important;
+}
+
+.light-dialog-container .md-drppicker td.in-range,
+.light-dialog-container .md-drppicker td.available:hover,
+.light-dialog-container .md-drppicker th.available:hover {
+    color: #111 !important;
+    background: rgba(48, 89, 175, 0.12) !important;
+}
+
+.light-dialog-container .md-drppicker td.off,
+.light-dialog-container .md-drppicker td.off.in-range,
+.light-dialog-container .md-drppicker td.off.start-date,
+.light-dialog-container .md-drppicker td.off.end-date {
+    color: rgba(0, 0, 0, 0.38) !important;
+}
+
+.light-dialog-container .md-drppicker select {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+.light-dialog-container .md-drppicker .prev.available,
+.light-dialog-container .md-drppicker .next.available {
+    filter: invert(0);
+}
+
+.light-dialog-container .md-drppicker .buttons {
+    background: #fff !important;
+}
+
+.my-select-panel-class.mat-mdc-select-panel,
+.my-select-panel-class .mat-mdc-option {
+    background: #fff !important;
+}
+
+.my-select-panel-class .mdc-list-item__primary-text,
+.my-select-panel-class .mat-mdc-option .mat-pseudo-checkbox,
+.my-select-panel-class .mat-mdc-option {
+    color: #111 !important;
 }
 
 .md-drppicker .btn {

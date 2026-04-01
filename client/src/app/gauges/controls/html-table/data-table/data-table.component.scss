@@ -2,17 +2,53 @@
     display: block;
     height: 100%;
     min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 
     .data-table-scroll {
-        height: 100%;
+        flex: 1 1 auto;
+        width: 100%;
         overflow: auto;
         min-height: 0;
+        min-width: 0;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable both-edges;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(80, 80, 80, 0.85) rgba(0, 0, 0, 0.08);
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
     }
 
-    ::ng-deep .mat-table {
-        /* background-color: transparent !important; */
+    .data-table-scroll::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .data-table-scroll::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 999px;
+    }
+
+    .data-table-scroll::-webkit-scrollbar-thumb {
+        background: rgba(80, 80, 80, 0.8);
+        border-radius: 999px;
+        border: 2px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .data-table-scroll-paginated {
+        flex: 0 1 auto;
+        max-height: 100%;
+    }
+
+    ::ng-deep :where(.mat-table, .mat-mdc-table) {
         min-width: 100%;
-        /* display: grid; */
+        width: max-content;
+    }
+
+    ::ng-deep :where(.mat-header-row, .mat-mdc-header-row, .mat-row, .mat-mdc-row) {
+        width: max-content;
+        min-width: 100%;
+        box-sizing: border-box;
     }
 
     .mat-header-row {
@@ -37,26 +73,84 @@
         min-height: 0px;
     }
 
+    .data-table-header-cell,
     .data-table-row-cell {
+        box-sizing: border-box;
         min-width: 0;
         overflow: hidden;
-        // text-overflow: ellipsis;
-        // white-space: nowrap;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    ::ng-deep .data-table-header-cell,
+    ::ng-deep .data-table-row-cell {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    .data-table-header-cell {
+        align-items: center;
+    }
+
+    .cell-text {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    ::ng-deep .data-table-header-cell .mat-sort-header-container {
+        min-width: 0;
+        width: 100%;
+    }
+
+    ::ng-deep .data-table-header-cell .mat-sort-header-content {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .table-toolbar {
-        height: 42px;
-        display: block;
-        line-height: 42px;
+        flex: 0 0 auto;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 6px 10px;
+        box-sizing: border-box;
+    }
+
+    .table-toolbar-left,
+    .table-toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .table-toolbar-left {
+        flex: 1 1 auto;
+    }
+
+    .table-toolbar-filter input {
+        width: 250px;
+        max-width: 100%;
     }
 
     .data-table-paginator {
-        height: 42px;
-        top: 0px;
-        position: absolute;
-        right: 0px;
-        /* float: right; */
+        height: auto;
+        position: static;
+        margin-left: auto;
         background-color: transparent;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        padding: 2px 6px;
     }
 
     .moka-toolbar-editor {
@@ -76,19 +170,41 @@
         padding-left: 5px;
     }
 
+    ::ng-deep .moka-toolbar-select,
+    ::ng-deep .moka-toolbar-select .mat-mdc-select-value,
+    ::ng-deep .moka-toolbar-select .mat-mdc-select-arrow,
+    ::ng-deep .moka-toolbar-select .mat-mdc-select-min-line {
+        color: inherit !important;
+    }
+
+    ::ng-deep .moka-toolbar-select .mat-mdc-select-trigger {
+        min-height: 28px;
+        padding: 0 4px;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.04);
+    }
+
     .moka-toolbar-button {
         width: 40px;
         padding: unset;
     }
 
     .table-toolbar .date-range {
-        float: left;
-        max-height: 42px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        max-height: none;
     }
 
     ::ng-deep .data-table-paginator .mat-paginator-container {
         min-height: unset;
-        height: 42px;
+        height: auto;
+        padding: 0;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        row-gap: 4px;
+        column-gap: 8px;
     }
 
     ::ng-deep .data-table-paginator .mat-paginator-container .mat-paginator-page-size {
@@ -98,6 +214,45 @@
 
     ::ng-deep .data-table-paginator .mat-paginator-container .mat-paginator-page-size-select {
         margin: unset;
+    }
+
+    ::ng-deep .data-table-paginator .mat-paginator-range-actions {
+        gap: 4px;
+    }
+
+    ::ng-deep .data-table-paginator .mat-mdc-icon-button {
+        color: inherit;
+    }
+
+    ::ng-deep .data-table-paginator .mat-mdc-paginator-icon {
+        fill: currentColor;
+    }
+
+    ::ng-deep .data-table-paginator .mat-mdc-select-arrow,
+    ::ng-deep .data-table-paginator .mat-mdc-select-value,
+    ::ng-deep .data-table-paginator .mat-mdc-paginator-range-label,
+    ::ng-deep .data-table-paginator .mat-mdc-paginator-page-size-label {
+        color: inherit;
+    }
+
+    ::ng-deep .data-table-paginator .mat-mdc-form-field-infix {
+        min-height: auto;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+    ::ng-deep .data-table-paginator .mat-mdc-text-field-wrapper {
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 6px;
+    }
+
+    ::ng-deep .data-table-paginator .mdc-line-ripple,
+    ::ng-deep .data-table-paginator .mat-mdc-form-field-focus-overlay {
+        display: none;
+    }
+
+    ::ng-deep .data-table-paginator .mat-mdc-form-field-subscript-wrapper {
+        display: none;
     }
 
     ::ng-deep .dark-theme .mat-select-value {
@@ -148,7 +303,7 @@
     .reload-btn {
         position: absolute;
         right: 10px;
-        top: 0px;
+        top: 0;
         z-index: 9999;
     }
 
@@ -158,6 +313,25 @@
         mat-icon {
             color: inherit;
             opacity: 0.2;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .table-toolbar {
+            align-items: flex-start;
+        }
+
+        .table-toolbar-right {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .data-table-paginator {
+            margin-left: 0;
+        }
+
+        ::ng-deep .data-table-paginator .mat-paginator-container {
+            justify-content: flex-start;
         }
     }
 }

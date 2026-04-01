@@ -225,6 +225,30 @@ Tag 扩展能力（模型定义）：
 - `data` 表：也优先统一写 tag 真实 `id`，避免不同控件之间格式混用
 - 如果需要从 “设备名 + Tag 名” 自动生成 history 表列，生成脚本里应先查设备 tag 表，把名称映射成真实 tag id 再写入 JSON
 
+### History 大表建议开启分页
+
+当 `history` 表的列很多时，比如几十列温度/压力/状态一起展示：
+
+- 建议显式写上 `options.paginator.show: true`
+- 建议保留 `filter.show` 和 `daterange.show`
+- 不建议把过多不同类别的数据长期堆在一张表里，最好按“传感器 / 运行状态 / 设定值”等拆分
+
+原因：
+
+- 历史表列数过多时，前端需要同时渲染大量单元格，浏览器会明显变卡
+- 开启分页可以减少单次渲染的行数，改善滚动和交互体验
+- 分页只能缓解性能问题，不能替代合理拆表
+
+推荐示例：
+
+```json
+{
+  "paginator": { "show": true },
+  "filter": { "show": true },
+  "daterange": { "show": true }
+}
+```
+
 ## 4.2 多个 Output / Input 控件
 
 ### 路径
