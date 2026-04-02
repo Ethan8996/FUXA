@@ -4,6 +4,7 @@ param(
     [switch]$SkipInstall,
     [switch]$SkipBuild,
     [switch]$SkipAppDeps,
+    [string]$ElectronDist,
     [switch]$Help
 )
 
@@ -22,6 +23,8 @@ Options:
   -SkipInstall    Skip all npm install steps.
   -SkipBuild      Skip the Angular production build.
   -SkipAppDeps    Skip electron-builder install-app-deps.
+  -ElectronDist   Directory containing electron-v39.8.6-win32-x64.zip or
+                  another matching Electron zip for the configured version.
   -Help           Show this help message.
 
 Notes:
@@ -38,6 +41,14 @@ if ($Help) {
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
+
+if ($ElectronDist) {
+    if (-not (Test-Path -Path $ElectronDist -PathType Container)) {
+        throw "ElectronDist directory does not exist: $ElectronDist"
+    }
+
+    $ElectronDist = (Resolve-Path -Path $ElectronDist).Path
+}
 
 function Invoke-Step {
     param(
@@ -129,7 +140,13 @@ if (-not $SkipAppDeps) {
     }
 }
 
-Invoke-InRepo -Display 'cd app/electron && npx electron-builder --win nsis --x64' -Action {
+$builderArgs = @('--win', 'nsis', '--x64')
+if ($ElectronDist) {
+    $builderArgs += "-c.electronDist=$ElectronDist"
+}
+$builderCommandDisplay = 'cd app/electron && npx electron-builder ' + ($builderArgs -join ' ')
+
+Invoke-InRepo -Display $builderCommandDisplay -Action {
     Set-Location (Join-Path $RepoRoot 'app\electron')
-    npx electron-builder --win nsis --x64
+    & npx electron-builder @builderArgs
 }

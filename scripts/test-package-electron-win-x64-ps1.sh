@@ -24,11 +24,16 @@ fi
 assert_file_contains "${TARGET_SCRIPT}" "param("
 assert_file_contains "${TARGET_SCRIPT}" '[switch]$DryRun'
 assert_file_contains "${TARGET_SCRIPT}" '[switch]$SkipInstall'
+assert_file_contains "${TARGET_SCRIPT}" '[string]$ElectronDist'
+assert_file_contains "${TARGET_SCRIPT}" '-ElectronDist'
 assert_file_contains "${TARGET_SCRIPT}" '$innerAction = $Action'
 assert_file_contains "${TARGET_SCRIPT}" '& $innerAction'
+assert_file_contains "${TARGET_SCRIPT}" '$builderArgs = @('
+assert_file_contains "${TARGET_SCRIPT}" "'--win', 'nsis', '--x64'"
+assert_file_contains "${TARGET_SCRIPT}" '-c.electronDist='
 assert_file_contains "${TARGET_SCRIPT}" "npm install"
 assert_file_contains "${TARGET_SCRIPT}" "npm run build -- --configuration=production"
 assert_file_contains "${TARGET_SCRIPT}" "npx electron-builder install-app-deps"
-assert_file_contains "${TARGET_SCRIPT}" "npx electron-builder --win nsis --x64"
+assert_file_contains "${TARGET_SCRIPT}" 'npx electron-builder '
 
 printf 'All assertions passed.\n'
