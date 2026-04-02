@@ -64,10 +64,11 @@ function Invoke-InRepo {
         [scriptblock]$Action
     )
 
+    $innerAction = $Action
     Invoke-Step -Display $Display -Action {
         Push-Location $RepoRoot
         try {
-            & $Action
+            & $innerAction
         }
         finally {
             Pop-Location
